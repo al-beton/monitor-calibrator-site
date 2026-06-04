@@ -15,7 +15,7 @@ Open `index.html` in a browser. No build step, package install, backend, or netw
 For best results:
 
 1. Open the page on each monitor you want to compare.
-2. Use the pattern buttons to switch between grey steps and color ramps.
+2. Use the orientation and pattern buttons to switch between vertical or horizontal grey steps and color ramps.
 3. Use the browser's full-screen mode for the cleanest view.
 4. Click `Hide` when you want the pattern to fill the whole viewport.
 
