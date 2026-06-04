@@ -1,0 +1,25 @@
+{
+  "previewUrl": "https://al-beton.github.io/monitor-calibrator-site/previews/pr-10/",
+  "screenshots": [
+    {
+      "id": "desktop",
+      "label": "Desktop",
+      "path": "desktop.png",
+      "url": "https://al-beton.github.io/monitor-calibrator-site/previews/pr-10/",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "id": "iphone",
+      "label": "iPhone",
+      "path": "iphone.png",
+      "url": "https://al-beton.github.io/monitor-calibrator-site/previews/pr-10/",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  ]
+}
