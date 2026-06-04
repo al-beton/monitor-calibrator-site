@@ -102,6 +102,18 @@
       height: 100%;
     }
 
+    .rgb-steps {
+      display: grid;
+      grid-template-rows: repeat(3, 1fr);
+      width: 100%;
+      height: 100%;
+    }
+
+    body[data-orientation="horizontal"] .rgb-steps {
+      grid-template-rows: none;
+      grid-template-columns: repeat(3, 1fr);
+    }
+
     .hidden {
       display: none;
     }
@@ -147,6 +159,13 @@
     .hide-ui main {
       height: 100vh;
     }
+
+    @media (max-width: 700px) {
+      body[data-orientation="horizontal"] .rgb-steps .step {
+        font-size: 0;
+        text-shadow: none;
+      }
+    }
   </style>
 </head>
 <body data-orientation="vertical">
@@ -155,6 +174,11 @@
     <section id="redSteps" class="steps hidden" data-panel="red-steps"></section>
     <section id="greenSteps" class="steps hidden" data-panel="green-steps"></section>
     <section id="blueSteps" class="steps hidden" data-panel="blue-steps"></section>
+    <section class="rgb-steps hidden" data-panel="rgb-steps">
+      <div id="rgbRedSteps" class="steps"></div>
+      <div id="rgbGreenSteps" class="steps"></div>
+      <div id="rgbBlueSteps" class="steps"></div>
+    </section>
     <section class="ramp grey-ramp hidden" data-panel="grey-ramp"></section>
     <section class="ramp red-ramp hidden" data-panel="red-ramp"></section>
     <section class="ramp green-ramp hidden" data-panel="green-ramp"></section>
@@ -178,6 +202,7 @@
     <button data-mode="green-ramp" aria-pressed="false">Green ramp</button>
     <button data-mode="blue-steps" aria-pressed="false">Blue steps</button>
     <button data-mode="blue-ramp" aria-pressed="false">Blue ramp</button>
+    <button data-mode="rgb-steps" aria-pressed="false">RGB steps</button>
     <button data-mode="rgb-ramps" aria-pressed="false">RGB ramps</button>
     <button id="hideUi">Hide</button>
     <span id="orientationHint">Each horizontal band spans the full width. Match same Y position across windows.</span>
@@ -193,7 +218,10 @@
       { selector: '#greys', channels: ['value', 'value', 'value'] },
       { selector: '#redSteps', channels: ['value', 0, 0] },
       { selector: '#greenSteps', channels: [0, 'value', 0] },
-      { selector: '#blueSteps', channels: [0, 0, 'value'] }
+      { selector: '#blueSteps', channels: [0, 0, 'value'] },
+      { selector: '#rgbRedSteps', channels: ['value', 0, 0] },
+      { selector: '#rgbGreenSteps', channels: [0, 'value', 0] },
+      { selector: '#rgbBlueSteps', channels: [0, 0, 'value'] }
     ];
 
     function hexChannel(value) {
