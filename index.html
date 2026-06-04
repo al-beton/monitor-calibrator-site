@@ -16,8 +16,13 @@
     }
 
     body {
+      --ramp-direction: to bottom;
       display: grid;
       grid-template-rows: minmax(0, 1fr) auto;
+    }
+
+    body[data-orientation="horizontal"] {
+      --ramp-direction: to right;
     }
 
     main {
@@ -31,6 +36,11 @@
       grid-template-rows: repeat(17, 1fr);
       width: 100%;
       height: 100%;
+    }
+
+    body[data-orientation="horizontal"] .steps {
+      grid-template-rows: none;
+      grid-template-columns: repeat(17, minmax(0, 1fr));
     }
 
     .step {
@@ -49,25 +59,30 @@
       text-shadow: 0 1px 2px #fff;
     }
 
+    body[data-orientation="horizontal"] .step {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+    }
+
     .ramp {
       width: 100%;
       height: 100%;
     }
 
     .grey-ramp {
-      background: linear-gradient(to bottom, #000 0%, #fff 100%);
+      background: linear-gradient(var(--ramp-direction), #000 0%, #fff 100%);
     }
 
     .red-ramp {
-      background: linear-gradient(to bottom, #000 0%, #f00 100%);
+      background: linear-gradient(var(--ramp-direction), #000 0%, #f00 100%);
     }
 
     .green-ramp {
-      background: linear-gradient(to bottom, #000 0%, #0f0 100%);
+      background: linear-gradient(var(--ramp-direction), #000 0%, #0f0 100%);
     }
 
     .blue-ramp {
-      background: linear-gradient(to bottom, #000 0%, #00f 100%);
+      background: linear-gradient(var(--ramp-direction), #000 0%, #00f 100%);
     }
 
     .rgb-ramps {
@@ -75,6 +90,11 @@
       grid-template-rows: repeat(3, 1fr);
       width: 100%;
       height: 100%;
+    }
+
+    body[data-orientation="horizontal"] .rgb-ramps {
+      grid-template-rows: none;
+      grid-template-columns: repeat(3, 1fr);
     }
 
     .rgb-ramps > div {
@@ -129,7 +149,7 @@
     }
   </style>
 </head>
-<body>
+<body data-orientation="vertical">
   <main>
     <section id="greys" class="steps" data-panel="greys"></section>
     <section class="ramp grey-ramp hidden" data-panel="grey-ramp"></section>
@@ -144,7 +164,9 @@
   </main>
 
   <footer>
-    <strong>Vertical test</strong>
+    <strong>Monitor test</strong>
+    <button data-orientation="vertical" aria-pressed="true">Vertical</button>
+    <button data-orientation="horizontal" aria-pressed="false">Horizontal</button>
     <button data-mode="greys" aria-pressed="true">Grey steps</button>
     <button data-mode="grey-ramp" aria-pressed="false">Grey ramp</button>
     <button data-mode="red-ramp" aria-pressed="false">Red ramp</button>
@@ -152,11 +174,16 @@
     <button data-mode="blue-ramp" aria-pressed="false">Blue ramp</button>
     <button data-mode="rgb-ramps" aria-pressed="false">RGB ramps</button>
     <button id="hideUi">Hide</button>
-    <span>Each horizontal band spans the full width. Match same Y position across windows.</span>
+    <span id="orientationHint">Each horizontal band spans the full width. Match same Y position across windows.</span>
   </footer>
 
   <script>
     const greys = document.querySelector('#greys');
+    const orientationHint = document.querySelector('#orientationHint');
+    const orientationHints = {
+      vertical: 'Each horizontal band spans the full width. Match same Y position across windows.',
+      horizontal: 'Each vertical band spans the full height. Match same X position across windows.'
+    };
 
     for (let i = 0; i <= 16; i += 1) {
       const value = Math.round((i / 16) * 255);
@@ -175,6 +202,17 @@
           panel.classList.toggle('hidden', panel.dataset.panel !== mode);
         });
         document.querySelectorAll('button[data-mode]').forEach((other) => {
+          other.setAttribute('aria-pressed', String(other === button));
+        });
+      });
+    });
+
+    document.querySelectorAll('button[data-orientation]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const orientation = button.dataset.orientation;
+        document.body.dataset.orientation = orientation;
+        orientationHint.textContent = orientationHints[orientation];
+        document.querySelectorAll('button[data-orientation]').forEach((other) => {
           other.setAttribute('aria-pressed', String(other === button));
         });
       });
