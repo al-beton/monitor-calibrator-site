@@ -2,6 +2,8 @@
 
 A tiny static website for visually comparing and tuning monitors.
 
+Live site: <https://al-beton.github.io/monitor-calibrator-site/>
+
 The current version focuses on simple full-screen test patterns:
 
 - Grey and RGB channel steps for checking brightness, contrast, and color channel separation.
