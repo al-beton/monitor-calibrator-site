@@ -30,7 +30,3 @@ You do not need every pattern to match perfectly. Use the grey patterns for over
 This project is inspired by the Flatpanels Online pure HTML monitor test tool: <https://tft.vanity.dk/MonitorTest_pureHTML.html>.
 
 The goal is similar: provide simple browser-based monitor test patterns. This implementation is a small independent static page intended for open-source use and future customization.
-
-## License
-
-MIT. See `LICENSE`.
