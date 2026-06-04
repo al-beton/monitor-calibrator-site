@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monitor Calibrator</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      --ramp-direction: to bottom;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+    }
+
+    body[data-orientation="horizontal"] {
+      --ramp-direction: to right;
+    }
+
+    main {
+      width: 100vw;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-rows: repeat(17, 1fr);
+      width: 100%;
+      height: 100%;
+    }
+
+    body[data-orientation="horizontal"] .steps {
+      grid-template-rows: none;
+      grid-template-columns: repeat(17, minmax(0, 1fr));
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 0;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.72);
+      text-shadow: 0 1px 2px #000;
+    }
+
+    .step.light {
+      color: rgba(0, 0, 0, 0.65);
+      text-shadow: 0 1px 2px #fff;
+    }
+
+    body[data-orientation="horizontal"] .step {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+    }
+
+    .ramp {
+      width: 100%;
+      height: 100%;
+    }
+
+    .grey-ramp {
+      background: linear-gradient(var(--ramp-direction), #000 0%, #fff 100%);
+    }
+
+    .red-ramp {
+      background: linear-gradient(var(--ramp-direction), #000 0%, #f00 100%);
+    }
+
+    .green-ramp {
+      background: linear-gradient(var(--ramp-direction), #000 0%, #0f0 100%);
+    }
+
+    .blue-ramp {
+      background: linear-gradient(var(--ramp-direction), #000 0%, #00f 100%);
+    }
+
+    .rgb-ramps {
+      display: grid;
+      grid-template-rows: repeat(3, 1fr);
+      width: 100%;
+      height: 100%;
+    }
+
+    body[data-orientation="horizontal"] .rgb-ramps {
+      grid-template-rows: none;
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .rgb-ramps > div {
+      width: 100%;
+      height: 100%;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    footer {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 34px;
+      box-sizing: border-box;
+      padding: 4px 10px;
+      background: #111;
+      color: #ccc;
+      font-size: 12px;
+      border-top: 1px solid #333;
+    }
+
+    button {
+      border: 1px solid #555;
+      border-radius: 4px;
+      background: #222;
+      color: #eee;
+      padding: 3px 8px;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    footer span {
+      min-width: 220px;
+      flex: 1;
+    }
+
+    button[aria-pressed="true"] {
+      background: #eee;
+      color: #111;
+    }
+
+    .hide-ui footer {
+      display: none;
+    }
+
+    .hide-ui main {
+      height: 100vh;
+    }
+  </style>
+</head>
+<body data-orientation="vertical">
+  <main>
+    <section id="greys" class="steps" data-panel="greys"></section>
+    <section class="ramp grey-ramp hidden" data-panel="grey-ramp"></section>
+    <section class="ramp red-ramp hidden" data-panel="red-ramp"></section>
+    <section class="ramp green-ramp hidden" data-panel="green-ramp"></section>
+    <section class="ramp blue-ramp hidden" data-panel="blue-ramp"></section>
+    <section class="rgb-ramps hidden" data-panel="rgb-ramps">
+      <div class="red-ramp"></div>
+      <div class="green-ramp"></div>
+      <div class="blue-ramp"></div>
+    </section>
+  </main>
+
+  <footer>
+    <strong>Monitor test</strong>
+    <button data-orientation="vertical" aria-pressed="true">Vertical</button>
+    <button data-orientation="horizontal" aria-pressed="false">Horizontal</button>
+    <button data-mode="greys" aria-pressed="true">Grey steps</button>
+    <button data-mode="grey-ramp" aria-pressed="false">Grey ramp</button>
+    <button data-mode="red-ramp" aria-pressed="false">Red ramp</button>
+    <button data-mode="green-ramp" aria-pressed="false">Green ramp</button>
+    <button data-mode="blue-ramp" aria-pressed="false">Blue ramp</button>
+    <button data-mode="rgb-ramps" aria-pressed="false">RGB ramps</button>
+    <button id="hideUi">Hide</button>
+    <span id="orientationHint">Each horizontal band spans the full width. Match same Y position across windows.</span>
+  </footer>
+
+  <script>
+    const greys = document.querySelector('#greys');
+    const orientationHint = document.querySelector('#orientationHint');
+    const orientationHints = {
+      vertical: 'Each horizontal band spans the full width. Match same Y position across windows.',
+      horizontal: 'Each vertical band spans the full height. Match same X position across windows.'
+    };
+
+    for (let i = 0; i <= 16; i += 1) {
+      const value = Math.round((i / 16) * 255);
+      const hex = value.toString(16).padStart(2, '0');
+      const div = document.createElement('div');
+      div.className = `step ${value > 150 ? 'light' : ''}`;
+      div.style.background = `#${hex}${hex}${hex}`;
+      div.textContent = `#${hex}${hex}${hex}`;
+      greys.appendChild(div);
+    }
+
+    document.querySelectorAll('button[data-mode]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const mode = button.dataset.mode;
+        document.querySelectorAll('[data-panel]').forEach((panel) => {
+          panel.classList.toggle('hidden', panel.dataset.panel !== mode);
+        });
+        document.querySelectorAll('button[data-mode]').forEach((other) => {
+          other.setAttribute('aria-pressed', String(other === button));
+        });
+      });
+    });
+
+    document.querySelectorAll('button[data-orientation]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const orientation = button.dataset.orientation;
+        document.body.dataset.orientation = orientation;
+        orientationHint.textContent = orientationHints[orientation];
+        document.querySelectorAll('button[data-orientation]').forEach((other) => {
+          other.setAttribute('aria-pressed', String(other === button));
+        });
+      });
+    });
+
+    document.querySelector('#hideUi').addEventListener('click', () => {
+      document.body.classList.add('hide-ui');
+    });
+  </script>
+</body>
+</html>
