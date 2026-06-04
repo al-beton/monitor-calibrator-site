@@ -5,6 +5,9 @@ const { chromium } = require('playwright');
 const configPath = process.argv[2] || '.github/preview-screenshots.json';
 const outputDir = process.argv[3] || 'preview-screenshots';
 const previewUrl = process.env.PREVIEW_URL;
+const repository = process.env.GITHUB_REPOSITORY;
+const prNumber = process.env.PR_NUMBER;
+const headSha = process.env.HEAD_SHA;
 
 if (!previewUrl) {
   throw new Error('PREVIEW_URL must be set');
@@ -64,4 +67,24 @@ async function applyActions(page, actions = []) {
     path.join(outputDir, 'manifest.json'),
     JSON.stringify({ previewUrl, screenshots }, null, 2)
   );
+
+  if (repository && prNumber && headSha) {
+    const branchPath = `pulls/${prNumber}/${headSha}`;
+    const rows = screenshots.map((screenshot) => {
+      const imageUrl = `https://github.com/${repository}/blob/ci-screenshots/${branchPath}/${screenshot.path}?raw=true`;
+      return `| ${screenshot.label} | [![${screenshot.label}](${imageUrl})](${imageUrl}) |`;
+    });
+    const markdown = [
+      `Preview: ${previewUrl}`,
+      '',
+      'Screenshots:',
+      '',
+      '| Scenario | Screenshot |',
+      '| --- | --- |',
+      ...rows,
+      ''
+    ].join('\n');
+
+    fs.writeFileSync(path.join(outputDir, 'comment.md'), markdown);
+  }
 })();
