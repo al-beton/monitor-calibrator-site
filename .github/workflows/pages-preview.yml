@@ -67,6 +67,50 @@ jobs:
             --create-if-none \
             --body "Preview: $PREVIEW_URL"
 
+      - name: Install Playwright
+        run: npx --yes playwright install --with-deps chromium
+
+      - name: Capture preview screenshots
+        env:
+          PREVIEW_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/previews/pr-${{ github.event.pull_request.number }}/
+        run: |
+          set -euo pipefail
+
+          playwright_bin="$(npx --yes -p playwright -c 'which playwright')"
+          playwright_modules="$(dirname "$(dirname "$playwright_bin")")"
+          NODE_PATH="$playwright_modules" node .github/scripts/capture-preview-screenshots.js \
+            .github/preview-screenshots.json \
+            preview-screenshots
+
+      - name: Upload preview screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-screenshots-pr-${{ github.event.pull_request.number }}
+          path: preview-screenshots/
+          if-no-files-found: error
+
+      - name: Comment screenshot artifact
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PREVIEW_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/previews/pr-${{ github.event.pull_request.number }}/
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          body_file="$(mktemp)"
+          {
+            echo "Preview: $PREVIEW_URL"
+            echo
+            echo "Screenshots artifact: $RUN_URL"
+          } > "$body_file"
+
+          gh pr comment "$PR_NUMBER" \
+            --repo "$GITHUB_REPOSITORY" \
+            --edit-last \
+            --create-if-none \
+            --body-file "$body_file"
+
   cleanup:
     if: github.event.action == 'closed'
     runs-on: ubuntu-latest
