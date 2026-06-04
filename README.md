@@ -4,7 +4,7 @@ A tiny static website for visually comparing and tuning monitors.
 
 The current version focuses on simple full-screen test patterns:
 
-- Grey steps for checking brightness and contrast separation.
+- Grey and RGB channel steps for checking brightness, contrast, and color channel separation.
 - Smooth grey and RGB ramps for spotting banding.
 - Full-width vertical layouts that make it easier to compare the same Y position across multiple displays or browser windows.
 

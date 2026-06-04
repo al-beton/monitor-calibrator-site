@@ -152,6 +152,9 @@
 <body data-orientation="vertical">
   <main>
     <section id="greys" class="steps" data-panel="greys"></section>
+    <section id="redSteps" class="steps hidden" data-panel="red-steps"></section>
+    <section id="greenSteps" class="steps hidden" data-panel="green-steps"></section>
+    <section id="blueSteps" class="steps hidden" data-panel="blue-steps"></section>
     <section class="ramp grey-ramp hidden" data-panel="grey-ramp"></section>
     <section class="ramp red-ramp hidden" data-panel="red-ramp"></section>
     <section class="ramp green-ramp hidden" data-panel="green-ramp"></section>
@@ -169,8 +172,11 @@
     <button data-orientation="horizontal" aria-pressed="false">Horizontal</button>
     <button data-mode="greys" aria-pressed="true">Grey steps</button>
     <button data-mode="grey-ramp" aria-pressed="false">Grey ramp</button>
+    <button data-mode="red-steps" aria-pressed="false">Red steps</button>
     <button data-mode="red-ramp" aria-pressed="false">Red ramp</button>
+    <button data-mode="green-steps" aria-pressed="false">Green steps</button>
     <button data-mode="green-ramp" aria-pressed="false">Green ramp</button>
+    <button data-mode="blue-steps" aria-pressed="false">Blue steps</button>
     <button data-mode="blue-ramp" aria-pressed="false">Blue ramp</button>
     <button data-mode="rgb-ramps" aria-pressed="false">RGB ramps</button>
     <button id="hideUi">Hide</button>
@@ -178,22 +184,45 @@
   </footer>
 
   <script>
-    const greys = document.querySelector('#greys');
     const orientationHint = document.querySelector('#orientationHint');
     const orientationHints = {
       vertical: 'Each horizontal band spans the full width. Match same Y position across windows.',
       horizontal: 'Each vertical band spans the full height. Match same X position across windows.'
     };
+    const stepPanels = [
+      { selector: '#greys', channels: ['value', 'value', 'value'] },
+      { selector: '#redSteps', channels: ['value', 0, 0] },
+      { selector: '#greenSteps', channels: [0, 'value', 0] },
+      { selector: '#blueSteps', channels: [0, 0, 'value'] }
+    ];
 
-    for (let i = 0; i <= 16; i += 1) {
-      const value = Math.round((i / 16) * 255);
-      const hex = value.toString(16).padStart(2, '0');
-      const div = document.createElement('div');
-      div.className = `step ${value > 150 ? 'light' : ''}`;
-      div.style.background = `#${hex}${hex}${hex}`;
-      div.textContent = `#${hex}${hex}${hex}`;
-      greys.appendChild(div);
+    function hexChannel(value) {
+      return value.toString(16).padStart(2, '0');
     }
+
+    function channelValue(channel, value) {
+      return channel === 'value' ? value : channel;
+    }
+
+    function luminance(red, green, blue) {
+      return (0.299 * red) + (0.587 * green) + (0.114 * blue);
+    }
+
+    function renderSteps({ selector, channels }) {
+      const panel = document.querySelector(selector);
+      for (let i = 0; i <= 16; i += 1) {
+        const value = Math.round((i / 16) * 255);
+        const [red, green, blue] = channels.map((channel) => channelValue(channel, value));
+        const hex = `#${hexChannel(red)}${hexChannel(green)}${hexChannel(blue)}`;
+        const div = document.createElement('div');
+        div.className = `step ${luminance(red, green, blue) > 150 ? 'light' : ''}`;
+        div.style.background = hex;
+        div.textContent = hex;
+        panel.appendChild(div);
+      }
+    }
+
+    stepPanels.forEach(renderSteps);
 
     document.querySelectorAll('button[data-mode]').forEach((button) => {
       button.addEventListener('click', () => {
