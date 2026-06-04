@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+
+# Editor settings
+.idea/
+.vscode/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+
+# Dependency folders, if tooling is added later
+node_modules/
