@@ -72,6 +72,8 @@ jobs:
 
       - name: Capture preview screenshots
         env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PREVIEW_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/previews/pr-${{ github.event.pull_request.number }}/
         run: |
           set -euo pipefail
@@ -89,21 +91,67 @@ jobs:
           path: preview-screenshots/
           if-no-files-found: error
 
+      - name: Publish embedded screenshots
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+
+          worktree="$(mktemp -d)"
+          if git ls-remote --exit-code --heads origin ci-screenshots >/dev/null 2>&1; then
+            git fetch origin ci-screenshots
+            git worktree add "$worktree" origin/ci-screenshots
+          else
+            git worktree add --detach "$worktree"
+            git -C "$worktree" switch --orphan ci-screenshots
+            git -C "$worktree" rm -rf . >/dev/null 2>&1 || true
+          fi
+
+          screenshot_dir="$worktree/pulls/$PR_NUMBER/$HEAD_SHA"
+          mkdir -p "$screenshot_dir"
+          cp preview-screenshots/*.png "$screenshot_dir/"
+          cp preview-screenshots/manifest.json "$screenshot_dir/"
+          cp preview-screenshots/comment.md "$screenshot_dir/"
+
+          git -C "$worktree" config user.name "github-actions[bot]"
+          git -C "$worktree" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$worktree" add -A
+
+          if git -C "$worktree" diff --cached --quiet; then
+            echo "No embedded screenshot changes to publish."
+            exit 0
+          fi
+
+          git -C "$worktree" commit -m "Publish screenshots for PR #$PR_NUMBER"
+          git -C "$worktree" push origin HEAD:ci-screenshots
+
       - name: Comment screenshot artifact
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PREVIEW_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/previews/pr-${{ github.event.pull_request.number }}/
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
           body_file="$(mktemp)"
+          if [ "$HEAD_REPOSITORY" = "$GITHUB_REPOSITORY" ] && [ -f preview-screenshots/comment.md ]; then
+            cp preview-screenshots/comment.md "$body_file"
+          else
+            {
+              echo "Preview: $PREVIEW_URL"
+              echo
+              echo "Screenshots artifact: $RUN_URL"
+            } > "$body_file"
+          fi
+
           {
-            echo "Preview: $PREVIEW_URL"
             echo
-            echo "Screenshots artifact: $RUN_URL"
-          } > "$body_file"
+            echo "Workflow run: $RUN_URL"
+          } >> "$body_file"
 
           gh pr comment "$PR_NUMBER" \
             --repo "$GITHUB_REPOSITORY" \
