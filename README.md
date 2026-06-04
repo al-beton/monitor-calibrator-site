@@ -19,6 +19,10 @@ For best results:
 3. Use the browser's full-screen mode for the cleanest view.
 4. Click `Hide` when you want the pattern to fill the whole viewport.
 
+To tune a display, put it next to a reference screen whose image you already trust, such as a built-in laptop display or another monitor you like. Open the same pattern on both screens, line up the steps or ramps, then adjust the target display's brightness, contrast, gamma, gain, and color controls until the visible bands and gradients match the reference as closely as possible.
+
+You do not need every pattern to match perfectly. Use the grey patterns for overall brightness, contrast, and gamma, then use the red, green, blue, and RGB patterns to check the color channels. Prioritize the ranges and colors that matter most for your own work.
+
 ## Publish
 
 This project is intentionally static. Any static host should work, including GitHub Pages, Netlify, Vercel, Cloudflare Pages, or a plain web server.
