@@ -23,7 +23,7 @@ For best results:
 
 This project is intentionally static. Any static host should work, including GitHub Pages, Netlify, Vercel, Cloudflare Pages, or a plain web server.
 
-If publishing with GitHub Pages, serve the repository root and use `index.html` as the entry point.
+GitHub Pages serves production from the repository root. Pull request previews are published under `/previews/pr-N/` and linked from a PR comment.
 
 ## Inspiration
 

@@ -1,0 +1,111 @@
+name: Deploy pull request preview
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+      - closed
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: pages-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pull request
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Publish preview
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PREVIEW_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/previews/pr-${{ github.event.pull_request.number }}/
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          worktree="$(mktemp -d)"
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch origin gh-pages
+            git worktree add "$worktree" origin/gh-pages
+          else
+            git worktree add --detach "$worktree"
+            git -C "$worktree" switch --orphan gh-pages
+            git -C "$worktree" rm -rf . >/dev/null 2>&1 || true
+          fi
+
+          preview_dir="$worktree/previews/pr-$PR_NUMBER"
+          rm -rf "$preview_dir"
+          mkdir -p "$preview_dir"
+          cp index.html "$preview_dir/index.html"
+          touch "$worktree/.nojekyll"
+
+          git -C "$worktree" config user.name "github-actions[bot]"
+          git -C "$worktree" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$worktree" add -A
+
+          if ! git -C "$worktree" diff --cached --quiet; then
+            git -C "$worktree" commit -m "Deploy preview for PR #$PR_NUMBER"
+            git -C "$worktree" push origin HEAD:gh-pages
+          fi
+
+          gh pr comment "$PR_NUMBER" \
+            --repo "$GITHUB_REPOSITORY" \
+            --edit-last \
+            --create-if-none \
+            --body "Preview: $PREVIEW_URL"
+
+  cleanup:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout base
+        uses: actions/checkout@v4
+
+      - name: Remove preview
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if ! git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            echo "No gh-pages branch exists; nothing to clean up."
+            exit 0
+          fi
+
+          worktree="$(mktemp -d)"
+          git fetch origin gh-pages
+          git worktree add "$worktree" origin/gh-pages
+
+          preview_dir="$worktree/previews/pr-$PR_NUMBER"
+          if [ ! -d "$preview_dir" ]; then
+            echo "No preview directory exists for PR #$PR_NUMBER."
+            exit 0
+          fi
+
+          rm -rf "$preview_dir"
+
+          git -C "$worktree" config user.name "github-actions[bot]"
+          git -C "$worktree" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$worktree" add -A
+
+          if git -C "$worktree" diff --cached --quiet; then
+            echo "No preview changes to clean up."
+            exit 0
+          fi
+
+          git -C "$worktree" commit -m "Remove preview for PR #$PR_NUMBER"
+          git -C "$worktree" push origin HEAD:gh-pages
