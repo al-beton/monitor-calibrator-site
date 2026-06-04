@@ -1,4 +1,4 @@
-name: Deploy static site to GitHub Pages
+name: Deploy production site to GitHub Pages
 
 on:
   push:
@@ -7,32 +7,46 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
+  group: pages-production
   cancel-in-progress: false
 
 jobs:
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
+      - name: Publish production site
+        shell: bash
+        run: |
+          set -euo pipefail
 
-      - name: Upload static site
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
+          worktree="$(mktemp -d)"
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch origin gh-pages
+            git worktree add "$worktree" origin/gh-pages
+          else
+            git worktree add --detach "$worktree"
+            git -C "$worktree" switch --orphan gh-pages
+            git -C "$worktree" rm -rf . >/dev/null 2>&1 || true
+          fi
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          find "$worktree" -mindepth 1 -maxdepth 1 ! -name previews -exec rm -rf {} +
+          cp index.html "$worktree/index.html"
+          touch "$worktree/.nojekyll"
+
+          git -C "$worktree" config user.name "github-actions[bot]"
+          git -C "$worktree" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$worktree" add -A
+
+          if git -C "$worktree" diff --cached --quiet; then
+            echo "No production changes to publish."
+            exit 0
+          fi
+
+          git -C "$worktree" commit -m "Deploy production site"
+          git -C "$worktree" push origin HEAD:gh-pages
