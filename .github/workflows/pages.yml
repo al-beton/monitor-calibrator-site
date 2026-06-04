@@ -35,7 +35,7 @@ jobs:
             git -C "$worktree" rm -rf . >/dev/null 2>&1 || true
           fi
 
-          find "$worktree" -mindepth 1 -maxdepth 1 ! -name previews -exec rm -rf {} +
+          find "$worktree" -mindepth 1 -maxdepth 1 ! -name .git ! -name previews -exec rm -rf {} +
           cp index.html "$worktree/index.html"
           touch "$worktree/.nojekyll"
 
